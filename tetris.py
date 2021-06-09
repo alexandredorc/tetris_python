@@ -10,7 +10,7 @@ class Tiles:
         self.type=rd.randint(1,7)
         self.tile=np.arange(16).reshape(4,4)
         self.tile.fill(0)
-        self.pos=np.array([0,0])
+        self.pos=np.array([3,0])
         
         if (self.type==1):
             self.tile[0,2]=1
@@ -61,15 +61,12 @@ class Tiles:
             self.tile[3,2]=1
             self.color=(127,0,255)
             self.size=np.array([[1,3],[1,2]])
-        print("type",self.type)
+        #print("type",self.type)
         nb=rd.randint(0,3)
         for i in range(0,nb):
             self.rotate(True)
-        print(self.size[0,0])
-        print(self.size[0,1])
-        print(self.size[1,0])
-        print(self.size[1,1])
-        self.display()
+       
+        #self.display()
 
     def rotate(self,way):
         next=np.arange(16).reshape(4,4)
@@ -141,10 +138,9 @@ class Game:
                 self.move('right')
             if(pg.key.get_pressed()[K_LEFT]):
                 self.move('left')
-            if(pg.key.get_pressed()[K_w]):
-                self.tuile.rotate(True)
-            if(pg.key.get_pressed()[K_x]):
-                self.tuile.rotate(False)
+            if(pg.key.get_pressed()[K_UP]):
+                if(self.check_rotate()):
+                    self.tuile.rotate(True)
             if(pg.key.get_pressed()[K_DOWN]):
                 speed='fast'
             else:
@@ -159,7 +155,7 @@ class Game:
 
             self.background()
             self.display()
-            pg.time.delay(100)
+            pg.time.delay(80)
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     running = False
@@ -225,10 +221,51 @@ class Game:
                     pos=self.tuile.pos
                     self.board[i+pos[0],j+pos[1]]=self.tuile.type
         self.tuile=Tiles()
+        self.check_line()
         if(self.check_fall()):
             return False
+        
         return True
 
+    def delete_line(self,line):
+        for j in range(line,1,-1):
+            print(j)
+            for i in range(0,10):
+                self.board[i,j]=self.board[i,j-1]
+
+
+    def check_line(self):
+        for j in range(0,20):
+            line=True
+            for i in range(0,10):
+                if(self.board[i,j]==0):
+                    line=False
+            if(line):
+                self.delete_line(j)
+
+    def check_rotate(self):
+        next=np.arange(16).reshape(4,4)
+        for j in range(0,4):
+            for i in range(0,4):
+                next[3-j,i]=self.tuile.tile[i,j]
+
+        for j in range(0,4):
+            for i in range(0,4):
+                if(next[i,j]==1):
+                    if(j+self.tuile.pos[1]>=20):
+                        self.tuile.pos[1]=19-j
+                        return True
+                    if(i+self.tuile.pos[0]<0):
+                        self.tuile.pos[0]=i
+                        return True
+                    if(i+self.tuile.pos[0]>=10):
+                        self.tuile.pos[0]=9-i
+                        return True
+                    if(i+self.tuile.pos[0]>=0 and i+self.tuile.pos[0]<10  and j+self.tuile.pos[1]<20):
+                        if(self.board[i+self.tuile.pos[0],j+self.tuile.pos[1]]!=0):
+                            return False
+                
+        return True
 
     def check_fall(self):
         for j in range(0,4):
@@ -238,6 +275,7 @@ class Game:
                         return False
                     if(self.board[i+self.tuile.pos[0],j+1+self.tuile.pos[1]]!=0):
                         return False
+                
         return True
 
     def check_wall(self,direction):
@@ -247,8 +285,12 @@ class Game:
                     if(direction=='right'):
                         if(i+1+self.tuile.pos[0]==10):
                             return False
+                        if(self.board[i+1+self.tuile.pos[0],j+self.tuile.pos[1]]!=0):
+                            return False
                     elif(direction=='left'):
                         if(i+self.tuile.pos[0]==0):
+                            return False
+                        if(self.board[i-1+self.tuile.pos[0],j+self.tuile.pos[1]]!=0):
                             return False
         return True
 
@@ -266,9 +308,8 @@ class Game:
                     screen.blit(img,rect)"""
            
 
-#todo blocks have to block like walls
-#todo rotation is shifting the tile when is making it outside
-#score + lines erase
+
+#score + make the press button more responsive
 
 
 """ 10*block   20*block """
