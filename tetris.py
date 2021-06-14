@@ -115,7 +115,7 @@ class Game:
         for j in range(0,4):
             for i in range(0,4):
                 if (map[i,j]==1):
-                    pg.draw.rect(self.screen,self.tuile.color,((self.tuile.pos[0]+i)*block+200,(self.tuile.pos[1]+j)*block+300,block,block))
+                    self.block(((self.tuile.pos[0]+i)*block+200,(self.tuile.pos[1]+j)*block+300,block,block),self.tuile.color)
         #self.display_board()
         for j in range(0,20):
             for i in range(0,10):
@@ -132,36 +132,56 @@ class Game:
     def startGame(self):
         #GameLoop
         running = True
-        
         while running:
-            if(pg.key.get_pressed()[K_RIGHT]):
-                self.move('right')
-            if(pg.key.get_pressed()[K_LEFT]):
-                self.move('left')
-            if(pg.key.get_pressed()[K_UP]):
-                if(self.check_rotate()):
-                    self.tuile.rotate(True)
-            if(pg.key.get_pressed()[K_DOWN]):
-                speed='fast'
-            else:
-                speed='normal'
-            if(self.falling):
-                if(self.fall(speed)):
-                    running=False
-                    print("c'est perdu")
-                self.falling=False
-            else:
-                self.falling=True           
-
-            self.background()
-            self.display()
-            pg.time.delay(80)
+            pg.time.delay(100)
+            speed='normal'
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     running = False
-
-                
+                    quit()
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_RIGHT:
+                        self.move('right')
+                    if event.key == pg.K_LEFT:
+                        self.move('left')
+                    if event.key == pg.K_UP:
+                        if(self.check_rotate()):
+                            self.tuile.rotate(True)
+            keys=pg.key.get_pressed()
+            if (keys[K_DOWN]):
+                self.falling=0
+            if(self.falling==0):
+                if(self.fall(speed)):
+                    running=False
+                    self.gameover()
+                    
+                    pg.display.update()
+                    end=True
+                    while end:
+                        for event in pg.event.get():
+                            if event.type == pg.KEYDOWN:
+                                if event.key == pg.K_RETURN :
+                                    end=False
+                            if event.type == pg.QUIT:
+                                end=False
+                                quit()
+                self.falling=3
+            else:
+                self.falling-=1
+            self.background()
+            self.display()
             pg.display.update()
+    
+    def score_change(self,lines):
+        if (lines==1):
+            self.score+=40
+        if (lines==2):
+            self.score+=100
+        if (lines==3):
+            self.score+=300
+        if (lines==4):
+            self.score+=1200
+        
     
     def block(self,coor,color):
         if (color==1):
@@ -178,7 +198,13 @@ class Game:
             color=blue
         if (color==7):
             color=(127,0,255)
-        pg.draw.rect(self.screen,color,(coor[0],coor[1],coor[2],coor[3]))
+        stroke=8
+        pg.draw.polygon(self.screen,color_darker(color,0.7),((coor[0],coor[1]),(coor[0]+coor[2]/2,coor[1]+coor[3]/2),(coor[0]+coor[2],coor[1])))
+        pg.draw.polygon(self.screen,color_darker(color,0.8),((coor[0],coor[1]+coor[2]),(coor[0]+coor[2]/2,coor[1]+coor[3]/2),(coor[0],coor[1])))
+        pg.draw.polygon(self.screen,color_darker(color,0.5),((coor[0],coor[1]+coor[2]),(coor[0]+coor[2]/2,coor[1]+coor[3]/2),(coor[0]+coor[2],coor[1]+coor[3])))
+        pg.draw.polygon(self.screen,color_darker(color,0.6),((coor[0]+coor[2],coor[1]),(coor[0]+coor[2]/2,coor[1]+coor[3]/2),(coor[0]+coor[2],coor[1]+coor[3])))
+        
+        pg.draw.rect(self.screen,color,(coor[0]+stroke,coor[1]+stroke,coor[2]-(2*stroke),coor[3]-(2*stroke)))
 
     def square(self,coor,stroke):
         pg.draw.rect(self.screen,gamecolor,(coor[0]-stroke,coor[1]-stroke,coor[2]+(2*stroke),coor[3]+(2*stroke)))
@@ -186,8 +212,36 @@ class Game:
 
     def background(self):
         self.screen.fill(black)
+        title="TETRIS"
+        img = font.render(title,True, white)
+        rect=img.get_rect()
+        rect.center=(width/2,100)
+        
+        self.screen.blit(img,rect)
+        score="SCORE: "+str(self.score)
+        dis = font.render(score,True, white)
+        rect=img.get_rect()
+        rect.center=(width/2,250)
+
+        self.screen.blit(dis,rect)
         self.square((100,300,FrameWidth,FrameHeight),3)
         self.square((200,300,utilWidth,utilHeight),3)
+
+    
+    def gameover(self):
+        self.screen.fill(black)
+        title="GAME OVER"
+        img = font.render(title,True, white)
+        rect=img.get_rect()
+        rect.center=(width/2,500)
+        
+        self.screen.blit(img,rect)
+        score="SCORE: "+str(self.score)
+        dis = font.render(score,True, white)
+        rect=img.get_rect()
+        rect.center=(width/2,750)
+
+        self.screen.blit(dis,rect)
 
     def fall(self,speed):  
         if(speed=='fast'):
@@ -221,7 +275,8 @@ class Game:
                     pos=self.tuile.pos
                     self.board[i+pos[0],j+pos[1]]=self.tuile.type
         self.tuile=Tiles()
-        self.check_line()
+        nbline=self.check_line()
+        self.score_change(nbline)
         if(self.check_fall()):
             return False
         
@@ -229,19 +284,21 @@ class Game:
 
     def delete_line(self,line):
         for j in range(line,1,-1):
-            print(j)
             for i in range(0,10):
                 self.board[i,j]=self.board[i,j-1]
 
 
     def check_line(self):
+        nbline=0
         for j in range(0,20):
             line=True
             for i in range(0,10):
                 if(self.board[i,j]==0):
                     line=False
             if(line):
+                nbline+=1
                 self.delete_line(j)
+        return nbline
 
     def check_rotate(self):
         next=np.arange(16).reshape(4,4)
@@ -294,20 +351,12 @@ class Game:
                             return False
         return True
 
-        """for i in range(1, 10):
-            pg.draw.line(screen,white,(1000*i//10,0),(1000*i//10,1000)
-            pg.draw.line(screen,white,(0,1000*i//10),(1000,1000*i//10))
-        for x in range(0,10):
-            for y in range(0,10):
-                if self.maps[y][x]!='':
-                    pg.draw.rect(screen,red,(x*1000/10+1,y*1000//10+1,1000//10 -1,1000//10-1))
-                    img = font.render(self.maps[y][x], True, blue)
-                    rect=img.get_rect()
-                    rect.center=(x*10,y*10)
-                    print(rect)
-                    screen.blit(img,rect)"""
-           
+ 
+    
 
+def color_darker(color,k):
+    return (int(color[0]*k),int(color[1]*k),int(color[2]*k))
+        
 
 #score + make the press button more responsive
 
@@ -328,8 +377,10 @@ red=(255,0,0)
 green=(0,255,0)
 blue=(0,0,255)
 black=(0,0,0)
-font = pg.font.Font('freesansbold.ttf', 20)
 
-G=Game("Tetris")
-G.startGame()
+font = pg.font.Font('freesansbold.ttf', 60)
+
+while(True):
+    G=Game("Tetris")
+    G.startGame()
 
