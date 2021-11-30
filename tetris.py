@@ -86,7 +86,7 @@ class Tiles:
     def display(self):
         for j in range(0,4):
             for i in range(0,4):
-                print(self.tile[i,j],end=' ')
+                print(self.tile[i,j],end="")
             print(" ")
 
     def fall(self,speed,tiles_map):
@@ -103,7 +103,8 @@ class Tiles:
 class Game:
     def __init__(self,name):
         self.board = np.zeros((10,20)) 
-        self.screen = pg.display.set_mode((width, height))
+        self.screen = pg.display.set_mode((width, height),pg.RESIZABLE)
+        self.size= self.screen.get_size()
         self.name=name
         self.score=0
         self.bestscore=0
@@ -111,21 +112,23 @@ class Game:
         self.falling=False
 
     def display(self):
+        block=self.size[1]/20
+        rightSide=(self.size[0]-self.size[1]/2)/2
         map=self.tuile.tile
         for j in range(0,4):
             for i in range(0,4):
                 if (map[i,j]==1):
-                    self.block(((self.tuile.pos[0]+i)*block+200,(self.tuile.pos[1]+j)*block+300,block,block),self.tuile.color)
+                    self.block(((self.tuile.pos[0]+i)*block+rightSide,(self.tuile.pos[1]+j)*block,block,block),self.tuile.color)
         #self.display_board()
         for j in range(0,20):
             for i in range(0,10):
                 if(self.board[i,j]!=0):
-                    self.block((i*block+200,j*block+300,block,block),self.board[i,j])
+                    self.block((i*block+rightSide,j*block,block,block),self.board[i,j])
 
     def display_board(self):
         for j in range(0,20):
             for i in range(0,10):
-                print(self.board[i,j],end=' ')
+                print(self.board[i,j] , end="")
             print(" ")                
 
 
@@ -133,6 +136,7 @@ class Game:
         #GameLoop
         running = True
         while running:
+            self.size=self.screen.get_size()
             pg.time.delay(100)
             speed='normal'
             for event in pg.event.get():
@@ -212,20 +216,21 @@ class Game:
 
     def background(self):
         self.screen.fill(black)
+        '''
         title="TETRIS"
         img = font.render(title,True, white)
         rect=img.get_rect()
-        rect.center=(width/2,100)
+        rect.center=(self.size[0]/2,self.size[1]/10)
         
         self.screen.blit(img,rect)
         score="SCORE: "+str(self.score)
         dis = font.render(score,True, white)
         rect=img.get_rect()
-        rect.center=(width/2,250)
+        rect.center=(self.size[0]/2,self.size[1]/4)
 
-        self.screen.blit(dis,rect)
-        self.square((100,300,FrameWidth,FrameHeight),3)
-        self.square((200,300,utilWidth,utilHeight),3)
+        self.screen.blit(dis,rect)'''
+        self.square(((self.size[1]/4),0,self.size[0]-self.size[1]/2,self.size[1]),3)
+        self.square(((self.size[0]-self.size[1]/2)/2,0,self.size[1]/2,self.size[1]),3)
 
     
     def gameover(self):
@@ -233,13 +238,13 @@ class Game:
         title="GAME OVER"
         img = font.render(title,True, white)
         rect=img.get_rect()
-        rect.center=(width/2,500)
+        rect.center=(self.size[0]/2,self.size[1]/2)
         
         self.screen.blit(img,rect)
         score="SCORE: "+str(self.score)
         dis = font.render(score,True, white)
         rect=img.get_rect()
-        rect.center=(width/2,750)
+        rect.center=(self.size[0]/2,self.size[1]*3/4)
 
         self.screen.blit(dis,rect)
 
@@ -359,17 +364,16 @@ def color_darker(color,k):
         
 
 #score + make the press button more responsive
-
+#2560 × 1600
 
 """ 10*block   20*block """
 pg.init()
-utilWidth=600
+width=1600
+height=1000
+utilWidth=500
 utilHeight=utilWidth*2
-FrameWidth=200+utilWidth
+FrameWidth=width-utilWidth/2
 FrameHeight=utilHeight
-width=1000
-height=1800
-block=600/10
 back=(12,34,56)
 gamecolor=(98,198,255)
 white=(255,255,255)
